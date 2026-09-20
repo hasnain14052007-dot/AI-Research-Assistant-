@@ -61,9 +61,19 @@ def get_llm(api_key: str) -> LLM:
     CrewAI's native OpenAI client (custom_openai=True) instead of the
     older LiteLLM `groq/...` routing. This keeps the dependency list
     small and avoids LiteLLM version issues.
+
+    IMPORTANT: when custom_openai=True, CrewAI automatically strips a
+    *leading* "openai/" from the model string (it treats that prefix as
+    a routing hint, not part of the real model ID). Groq's actual model
+    ID for this model is literally "openai/gpt-oss-120b" (Groq kept
+    OpenAI's own naming), so if we passed "openai/gpt-oss-120b" here,
+    CrewAI would strip it down to just "gpt-oss-120b" and Groq would
+    reject it with a 404 model_not_found error.
+    Doubling the prefix ("openai/openai/gpt-oss-120b") means CrewAI's
+    single strip leaves exactly "openai/gpt-oss-120b" — the correct ID.
     """
     return LLM(
-        model="openai/gpt-oss-120b",       # the Groq-hosted model you asked for
+        model="openai/openai/gpt-oss-120b",  # see note above — do not "simplify" this
         custom_openai=True,
         base_url="https://api.groq.com/openai/v1",
         api_key=api_key,
